@@ -11,6 +11,11 @@
     "output"
   ],
   "dependencies": {
-    "purescript-console": "^0.1.0"
+    "purescript-console": "^0.1.0",
+    "purescript-signal": "~4.1.1",
+    "purescript-drawing": "~0.3.6",
+    "purescript-eff": "~0.1.2",
+    "purescript-unsafe-coerce": "~0.1.0",
+    "purescript-dom": "~0.2.10"
   }
 }
