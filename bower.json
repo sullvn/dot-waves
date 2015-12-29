@@ -16,6 +16,10 @@
     "purescript-drawing": "~0.3.6",
     "purescript-eff": "~0.1.2",
     "purescript-unsafe-coerce": "~0.1.0",
-    "purescript-dom": "~0.2.10"
+    "purescript-dom": "~0.2.10",
+    "purescript-foldable-traversable": "~0.4.2",
+    "purescript-monoid": "~0.3.2",
+    "purescript-arrays": "~0.4.4",
+    "purescript-integers": "~0.2.1"
   }
 }
