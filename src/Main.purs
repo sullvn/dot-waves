@@ -33,14 +33,14 @@ canvasConfig :: { boundaries :: Rectangle }
 canvasConfig = {
   boundaries: {
     x: 0.0, y: 0.0,
-    w: 800.0, h: 500.0
+    w: 1400.0, h: 800.0
   }
 }
 
 dotConfig = {
   separation: spacing + maxSize,
-  horizontal: 20,
-  vertical: 15,
+  horizontal: 50,
+  vertical: 30,
 
   maxSize,
   minSize: 5.0,
@@ -65,7 +65,7 @@ renderDot x y t =
     xf = (toNumber x) / (toNumber dotConfig.horizontal)
     yf = (toNumber y) / (toNumber dotConfig.vertical)
 
-    t' = t + xf * yf
+    t' = t + (xf * yf * 8.0)
     unitAmp n = ((sin n) + 1.0) / 2.0
     diameter = (pow (unitAmp t') 3.0) * (dotConfig.maxSize - dotConfig.minSize) + dotConfig.minSize
 
