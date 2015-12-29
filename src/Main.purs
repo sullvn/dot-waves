@@ -2,7 +2,7 @@ module Main where
 
 import Prelude
 
-import Math (sin)
+import Math (sin, pow)
 
 import Data.Maybe (Maybe(..))
 import Data.Array ((..))
@@ -55,41 +55,42 @@ graphicsOrigin = {
   y: (canvasConfig.boundaries.h - ((toNumber dotConfig.vertical) * dotConfig.separation)) / 2.0
 }
 
-renderDot :: Number -> Number -> Number -> Drawing
-renderDot x y r = 
+renderDot :: Int -> Int -> Number -> Drawing
+renderDot x y t = 
   filled (fillColor dotConfig.color) dot
   where
-    dot :: Shape
-    dot = circle x y r
+    xp = (toNumber x) * dotConfig.separation
+    yp = (toNumber y) * dotConfig.separation
 
-renderDots :: Int -> Int -> Number -> Number -> Drawing
-renderDots xn yn spacing diameter = fold dots
+    xf = (toNumber x) / (toNumber dotConfig.horizontal)
+    yf = (toNumber y) / (toNumber dotConfig.vertical)
+
+    t' = t + xf * yf
+    unitAmp = ((sin t') + 1.0) / 2.0
+    diameter = (pow unitAmp 3.0) * (dotConfig.maxSize - dotConfig.minSize) + dotConfig.minSize
+
+    dot :: Shape
+    dot = circle xp yp (diameter / 2.0)
+
+renderDots :: Int -> Int -> Number -> Drawing
+renderDots xn yn t = fold dots
   where 
     places :: Array { x :: Int, y :: Int }
     places = (\x y -> { x, y }) <$> 0 .. (xn - 1) <*> 0 .. (yn - 1)
 
-    coord { x, y } = { x: x' * spacing, y: y' * spacing }
-      where x' = toNumber x
-            y' = toNumber y
+    dot { x, y } = renderDot x y t
+    dots = dot <$> places
 
-    coords :: Array { x :: Number, y :: Number }
-    coords = coord <$> places
-
-    dot { x, y } = renderDot x y (diameter / 2.0)
-    dots = dot <$> coords
-
-pulse :: forall eff. Number -> Number -> Eff (dom :: DOM, timer :: Timer | eff) (Signal Number)
-pulse min max = do
+seconds :: forall eff. Eff (dom :: DOM, timer :: Timer | eff) (Signal Number)
+seconds = do
   nowMs <- animationFrame
-  return $ nowMs ~> amp
+  return $ nowMs ~> secs
     where secs ms = ms / 1000.0
-          unitAmp x = ((sin x) + 1.0) / 2.0
-          amp ms = (unitAmp $ secs ms) * (max - min) + min
 
 
 rendering :: forall eff. Context2D -> Number -> Eff (canvas :: Canvas | eff) Unit
 rendering ctx n = do
-  let dotGraphics = renderDots dotConfig.horizontal dotConfig.vertical dotConfig.separation n
+  let dotGraphics = renderDots dotConfig.horizontal dotConfig.vertical n
       graphics = translate graphicsOrigin.x graphicsOrigin.y dotGraphics
 
   clearRect ctx canvasConfig.boundaries
@@ -99,5 +100,5 @@ main :: forall eff. Eff ( timer :: Timer, dom :: DOM, canvas :: Canvas | eff) Un
 main = do
   Just canvas <- getCanvasElementById "dot-waves"
   ctx <- getContext2D canvas
-  p <- pulse dotConfig.minSize dotConfig.maxSize
-  runSignal $ p ~> (rendering ctx)
+  s <- seconds
+  runSignal $ s ~> (rendering ctx)
