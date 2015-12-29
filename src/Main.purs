@@ -22,7 +22,7 @@ import Graphics.Canvas (
   getCanvasElementById, getContext2D, clearRect,
   Rectangle()
 )
-import Graphics.Drawing.Color (rgb)
+import Graphics.Drawing.Color (hsl, rgb)
 import Graphics.Drawing (
   render, translate,
   Drawing(), Shape(),
@@ -57,7 +57,7 @@ graphicsOrigin = {
 
 renderDot :: Int -> Int -> Number -> Drawing
 renderDot x y t = 
-  filled (fillColor dotConfig.color) dot
+  filled (fillColor color) dot
   where
     xp = (toNumber x) * dotConfig.separation
     yp = (toNumber y) * dotConfig.separation
@@ -66,8 +66,11 @@ renderDot x y t =
     yf = (toNumber y) / (toNumber dotConfig.vertical)
 
     t' = t + xf * yf
-    unitAmp = ((sin t') + 1.0) / 2.0
-    diameter = (pow unitAmp 3.0) * (dotConfig.maxSize - dotConfig.minSize) + dotConfig.minSize
+    unitAmp n = ((sin n) + 1.0) / 2.0
+    diameter = (pow (unitAmp t') 3.0) * (dotConfig.maxSize - dotConfig.minSize) + dotConfig.minSize
+
+    clrCmp n off = off + ((unitAmp (t' + n)) * (200.0 - off))
+    color = rgb (clrCmp 0.0 40.0) (clrCmp 0.66 25.0) (clrCmp 0.33 25.0)
 
     dot :: Shape
     dot = circle xp yp (diameter / 2.0)
