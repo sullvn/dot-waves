@@ -4,13 +4,13 @@ import Prelude
 
 import Math (sin, pow)
 
-import Data.Maybe (Maybe(..))
+import Data.Maybe (fromJust)
 import Data.Array ((..))
 import Data.Foldable (fold)
-import Data.Int (toNumber)
+import Data.Int (toNumber, floor)
 
 import Control.Monad.Eff (Eff())
-import Control.Timer (Timer())
+import Control.Timer (TIMER())
 
 import Signal ((~>), Signal(), runSignal)
 import Signal.DOM (animationFrame)
@@ -18,11 +18,11 @@ import Signal.DOM (animationFrame)
 import DOM (DOM())
 
 import Graphics.Canvas (
-  Canvas(), Context2D(),
+  CANVAS(), Context2D(),
   getCanvasElementById, getContext2D, clearRect,
   Rectangle()
 )
-import Graphics.Drawing.Color (hsl, rgb)
+import Color (rgb)
 import Graphics.Drawing (
   render, translate,
   Drawing(), Shape(),
@@ -44,12 +44,13 @@ dotConfig = {
 
   maxSize,
   minSize: 5.0,
-  color: rgb 200.0 220.0 210.0
+  color: rgb 200 220 210
 }
   where
     spacing = 5.0
     maxSize = 20.0
 
+graphicsOrigin :: { x :: Number, y :: Number }
 graphicsOrigin = {
   x: (canvasConfig.boundaries.w - ((toNumber dotConfig.horizontal) * dotConfig.separation)) / 2.0,
   y: (canvasConfig.boundaries.h - ((toNumber dotConfig.vertical) * dotConfig.separation)) / 2.0
@@ -69,7 +70,7 @@ renderDot x y t =
     unitAmp n = ((sin n) + 1.0) / 2.0
     diameter = (pow (unitAmp t') 3.0) * (dotConfig.maxSize - dotConfig.minSize) + dotConfig.minSize
 
-    clrCmp n off = off + ((unitAmp (t' + n)) * (200.0 - off))
+    clrCmp n off = floor $ off + ((unitAmp (t' + n)) * (200.0 - off))
     color = rgb (clrCmp 0.0 40.0) (clrCmp 0.66 25.0) (clrCmp 0.33 25.0)
 
     dot :: Shape
@@ -84,14 +85,14 @@ renderDots xn yn t = fold dots
     dot { x, y } = renderDot x y t
     dots = dot <$> places
 
-seconds :: forall eff. Eff (dom :: DOM, timer :: Timer | eff) (Signal Number)
+seconds :: forall eff. Eff (dom :: DOM, timer :: TIMER | eff) (Signal Number)
 seconds = do
   nowMs <- animationFrame
-  return $ nowMs ~> secs
+  pure $ nowMs ~> secs
     where secs ms = ms / 1000.0
 
 
-rendering :: forall eff. Context2D -> Number -> Eff (canvas :: Canvas | eff) Unit
+rendering :: forall eff. Context2D -> Number -> Eff (canvas :: CANVAS | eff) Unit
 rendering ctx n = do
   let dotGraphics = renderDots dotConfig.horizontal dotConfig.vertical n
       graphics = translate graphicsOrigin.x graphicsOrigin.y dotGraphics
@@ -99,9 +100,10 @@ rendering ctx n = do
   clearRect ctx canvasConfig.boundaries
   render ctx graphics 
 
-main :: forall eff. Eff ( timer :: Timer, dom :: DOM, canvas :: Canvas | eff) Unit
+main :: forall eff. Partial => Eff ( timer :: TIMER, dom :: DOM, canvas :: CANVAS | eff) Unit
 main = do
-  Just canvas <- getCanvasElementById "dot-waves"
+  maybeCanvas <- getCanvasElementById "dot-waves"
+  let canvas = fromJust maybeCanvas
   ctx <- getContext2D canvas
   s <- seconds
   runSignal $ s ~> (rendering ctx)
